@@ -1,0 +1,41 @@
+%code about getting all frames of a video
+
+backgroundImage=rgb2gray(imread("data/background.JPG"));
+
+invertedBackgroundImage=rgb2gray(imread("data/background (copy).JPG"));
+invertedBackgroundImage=imresize(invertedBackgroundImage,[1920 1080]);
+disp(size(invertedBackgroundImage));
+imshow(invertedBackgroundImage);
+pause(5);
+
+cross_squat_path="data/template/cross_squat_1/";
+filePattern = fullfile(cross_squat_path, '*.jpg');
+theFiles = dir(filePattern);
+
+for k = 1 : 1%length(theFiles)
+    baseFileName = theFiles(k).name;
+    fullFileName = fullfile(theFiles(k).folder, baseFileName);
+    img=rgb2gray(imread(fullFileName));
+    
+faceIm = double(imread('affleck_gray.png'));
+gIm = imfilter(faceIm, G, 'replicate');
+imshow(gIm/255);
+
+    [rows, columns] = size(img);
+    newImg=zeros(rows,columns);
+
+    for r=1:rows
+        for c=1:columns
+            if abs(invertedBackgroundImage(r,c)-img(r,c))>10
+                newImg(r,c)=1;
+            else
+                newImg(r,c)=0;
+            end
+        end
+    end
+    imshow(img);
+    pause(1);
+    imshow(newImg);
+    pause(0.2);
+    %imwrite(newImg,fullFileName);
+end
