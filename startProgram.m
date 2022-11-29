@@ -1,45 +1,92 @@
 cam=webcam;
+%recordVideoOf_self(cam);
 %background_Image=take_screenshot_input(cam);
-background_Image=imread("data/background.png");
-%demo();
-webcam_demo(cam,background_Image);
+%background_Image=imread("data/background.png");
+demo();
+%webcam_demo(cam,background_Image);
+
+function recordVideoOf_self(cam)
+  aviObject = VideoWriter('data/myVideo.avi');   % Create a new AVI file 
+  open(aviObject);
+  for i=1:100
+    image=snapshot(cam);
+    imshow(image);
+    pause(0.5);                   
+    writeVideo(aviObject,image);
+  end
+   close(aviObject);         % Close the AVI file
+end
 
 function demo()
-    I=imread("data/background (copy).JPG");
-    imshow(I);
-    captureYellowColor(I);
+    I=imread("data/background.png");
+    v=VideoReader('data/myVideo.avi');
+    while hasFrame(v)
+        frame=readFrame(v);
+        background_subtraction(frame,I);
+        %imshow(frame);
+    end
+    %captureYellowColor(I);
+    %background_subtraction(image,background_Image);
 end
 
 function webcam_demo(cam,background_Image)
     while true
         image=snapshot(cam);
-        captureYellowColor(image,background_Image);
-        pause(0.2);
+        %captureYellowColor(image,background_Image);
+        background_subtraction(image,background_Image);
+        %pause(0.2);
     end
 end
 
-function afterFilter=background_subtraction(current_frame,background_Image)
+function result=background_subtraction(current_frame,background_Image)
 
     current_frame=filter2(fspecial('average',3),rgb2gray(current_frame));
     background_Image=filter2(fspecial('average',3),rgb2gray(background_Image));
-    afterFilte=medfilt2(current_frame-background_Image)>1;
+    img=medfilt2(current_frame-background_Image)>1;
     
-    %afterFilter=edge(afterFilter,'sobel');
+    
 
     for t=1:-15
-        afterFilter=medfilt2(current_frame-background_Image)>t;
-        imshow(afterFilter);
-        pause(2);
+        img=medfilt2(current_frame-background_Image)>t;
+        imshow(img);
+        pause(.52);
     end
+
+
+    result=take_largest_blob(img);
+    %point_largest_blob(img);
+    result=take_largest_blob(result);
+    %imshow(result);
+    pause(0.5);
     
 end
 
-function current_dumbell_pos=captureYellowColor(data1,background_Image)
+function binaryImage=take_largest_blob(img)
+     d_bsIm = bwmorph(img, "dilate");
+    %d_bsIm = bwmorph(d_bsIm, "erode");
+
+
+    [L, ~] = bwlabel(d_bsIm, 8);
+    blobMeasurements = regionprops(L, 'area','Centroid');
+    allAreas = [blobMeasurements.Area];
+    [~, sortIndexes] = sort(allAreas, 'descend');
+    biggestBlob = ismember(L, sortIndexes(1:1));
+    binaryImage=biggestBlob>0;
+    binaryImage=medfilt2(binaryImage);
+   
+    imshow(binaryImage);
+    hold on
+    bc=blobMeasurements(sortIndexes(1:1)).Centroid;
+    plot(bc(1),bc(2),'-m+');
+    hold off
+end
+
+
+function captureYellowColor(data1,background_Image)
     afterFilter=background_subtraction(data1,background_Image);
-    %current_dumbell_pos=zeros(size(background_Image));
 
     data=imcomplement(data1);
-    diff_im = imsubtract(data(:,:,3), rgb2gray(data));
+    diff_im = imsubtract(data(:,:,3), rg2gray(data));
     diff_im=medfilt2(diff_im,[3 3]);
     diff_im=im2bw(diff_im,0.1);
     diff_im=bwareaopen(diff_im,50);
@@ -49,6 +96,7 @@ function current_dumbell_pos=captureYellowColor(data1,background_Image)
     stats=regionprops(labeledImage,'BoundingBox','Centroid','Area');
     allAreas=[stats.Area];
     [sortedAreas, sortIndexes] = sort(allAreas, 'descend');
+
 
     
     imshow(afterFilter);
