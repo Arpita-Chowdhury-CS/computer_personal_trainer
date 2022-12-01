@@ -1,8 +1,8 @@
 cam=webcam;
 global calorie
 
-%recordVideoOf_self(cam);
-%background_Image=take_screenshot_input(cam);
+recordVideoOf_self(cam);
+background_Image=take_screenshot_input(cam);
 background_Image=imread("data/background.png");
 demo();
 %webcam_demo(cam,background_Image);
